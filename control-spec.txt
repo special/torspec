@@ -1376,11 +1376,18 @@
   The syntax is:
     "UPDATE_ONION" SP ServiceID
             [SP "Flags=" Flag *("," Flag)]
-            1*(SP "Port=" VirtPort ["," Target]) CRLF
+            1*(SP "Port=" VirtPort ["," Target])
+            *(SP "ClientAuth=" ClientName ":" ClientBlob) CRLF
 
     Flag =
-     "Detach"      ; Do not associate the newly created Onion Service
+     "Detach"    / ; Do not associate the newly created Onion Service
                      to the current control connection.
+     "BasicAuth"   ; Client authorization is required using the "basic"
+                     method.
+
+  The server reply format is:
+    *("250-ClientAuth=" ClientName ":" ClientBlob CRLF)
+    "250 OK" CRLF
 
   Tells the server to change an Onion ("Hidden") Service, that was
   previously created via an "ADD_ONION" command.  It is only possible to
@@ -1391,8 +1398,14 @@
   If the ServiceID is invalid, or is neither owned by the current control
   connection nor a detached Onion Service, the server will return a 552.
 
-  The "Port" arguments are identical to the "ADD_ONION" command, and
-  replace all previous port configurations.
+  The "Port" and "ClientAuth" arguments are identical to the "ADD_ONION"
+  command, and replace all previous configurations.  As with "ADD_ONION",
+  for ClientAuth arguments without a ClientBlob, a new credential will be
+  randomly generated and returned in the response.
+
+  If the "BasicAuth" flag was previously specified and is removed in
+  "UPDATE_ONION", client authorization will be disabled for the service,
+  discarding all authorization data and allowing any clients to connect.
 
   If the "Detach" flag is specified, the Onion Service will remain active
   after the originating control connection has terminated, and can be
