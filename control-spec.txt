@@ -1333,7 +1333,7 @@
   previously created via an "ADD_ONION" command.  It is only possible to
   remove Onion Services that were created on the same control connection
   as the "DEL_ONION" command, and those that belong to no control
-  connection in particular (The "Detach" flag was specified at creation).
+  connection in particular (the "Detach" flag was specified).
 
   If the ServiceID is invalid, or is neither owned by the current control
   connection nor a detached Onion Service, the server will return a 552.
@@ -1346,6 +1346,40 @@
   number of arguments, or a 552 if it doesn't recognize the ServiceID.
 
   [DEL_ONION was added in Tor 0.2.7.1-alpha.]
+
+3.28. UPDATE_ONION
+
+  The syntax is:
+    "UPDATE_ONION" SP ServiceID
+            [SP "Flags=" Flag *("," Flag)]
+            1*(SP "Port=" VirtPort ["," Target]) CRLF
+
+    Flag =
+     "Detach"      ; Do not associate the newly created Onion Service
+                     to the current control connection.
+
+  Tells the server to change an Onion ("Hidden") Service, that was
+  previously created via an "ADD_ONION" command.  It is only possible to
+  change Onion Services that were created on the same control connection
+  as the "UPDATE_ONION" command, and those that belong to no control
+  connection in particular (the "Detach" flag was previously specified).
+
+  If the ServiceID is invalid, or is neither owned by the current control
+  connection nor a detached Onion Service, the server will return a 552.
+
+  The "Port" arguments are identical to the "ADD_ONION" command, and
+  replace all previous port configurations.
+
+  If the "Detach" flag is specified, the Onion Service will remain active
+  after the originating control connection has terminated, and can be
+  deleted or modified via "DEL_ONION" and "UPDATE_ONION" from other
+  control connections.  It is not possible to remove the "Detach" flag
+  from an Onion Service.
+
+  Tor replies with "250 OK" on success, or a 512 if there are invalid
+  arguments, or a 552 if it doesn't recognize the ServiceID.
+
+  [UPDATE_ONION was added in Tor 0.x.x.x.]
 
 4. Replies
 
