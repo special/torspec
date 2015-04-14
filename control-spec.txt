@@ -1377,7 +1377,7 @@
     "UPDATE_ONION" SP ServiceID
             [SP "Flags=" Flag *("," Flag)]
             1*(SP "Port=" VirtPort ["," Target])
-            *(SP "ClientAuth=" ClientName ":" ClientBlob) CRLF
+            *(SP "ClientAuth=" ClientName [":" ClientBlob]) CRLF
 
     Flag =
      "Detach"    / ; Do not associate the newly created Onion Service
