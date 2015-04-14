@@ -1246,7 +1246,7 @@
     "ADD_ONION" SP KeyType ":" KeyBlob
             [SP "Flags=" Flag *("," Flag)]
             1*(SP "Port=" VirtPort ["," Target])
-            *(SP "ClientAuth=" ClientName ":" ClientBlob) CRLF
+            *(SP "ClientAuth=" ClientName [":" ClientBlob]) CRLF
 
     KeyType =
      "NEW"     / ; The server should generate a key of algorithm KeyBlob
