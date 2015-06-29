@@ -200,21 +200,21 @@ Status: Draft
 
       35 -- RELAY_COMMAND_INTRODUCE2
 
-            Sent from client to introduction point; requests
-            introduction. Same format as INTRODUCE1. Discussed in
+            Sent from introduction point to hidden service host;
+            forwards client's INTRODUCE1 request. Discussed in
             [FMT_INTRO1] and [PROCESS_INTRO2]
 
       36 -- RELAY_COMMAND_RENDEZVOUS1
 
-            Sent from introduction point to rendezvous point;
-            attempts to join introduction point's circuit to
-            client's circuit. Discussed in [JOIN_REND]
+            Sent from hidden service host to rendezvous point;
+            attempts to join to client's circuit. Discussed in
+            [JOIN_REND]
 
       37 -- RELAY_COMMAND_RENDEZVOUS2
 
-            Sent from introduction point to rendezvous point;
-            reports join of introduction point's circuit to
-            client's circuit. Discussed in [JOIN_REND]
+            Sent from rendezvous point to client; reports join of
+            hidden service host's circuit to client's circuit.
+            Discussed in [JOIN_REND]
 
       38 -- RELAY_COMMAND_INTRO_ESTABLISHED
 
@@ -230,7 +230,7 @@ Status: Draft
 
       40 -- RELAY_COMMAND_INTRODUCE_ACK
 
-            Sent form introduction point to client; acknowledges
+            Sent from introduction point to client; acknowledges
             receipt of INTRODUCE1 cell and reports success/failure.
             Discussed in [INTRO_ACK]
 
