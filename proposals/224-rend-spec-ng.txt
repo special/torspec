@@ -825,6 +825,11 @@ Status: Draft
        prevents an attacker from replacing a newer descriptor signed by
        a given key with a copy of an older version.)
 
+[XXX: This creates a bug: if my service publishes a descriptor with a
+      revision-counter of 2, then restarts its tor client, it will be
+      refused when trying to publish the new descriptor with a revision
+      of 1. -special]
+
      "encrypted" NL encrypted-string
 
        [Exactly once.]
