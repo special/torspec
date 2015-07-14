@@ -17,8 +17,8 @@ Status: Draft
    protocols are bypassed for these services.
 
    We also specify behavior for a tor instance to publish a direct onion
-   service, which requires a reachable OR port, without acting as a relay
-   in the network.
+   service, which requires a reachable OR port, without necessarily acting
+   as a public relay in the network.
 
 2. Motivation
 
