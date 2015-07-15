@@ -1,35 +1,35 @@
-Filename: xxx-direct-onion.txt
-Title: Direct Onion Services
+Filename: xxx-single-onion.txt
+Title: Single Onion Services
 Author: John Brooks, Paul Syverson, Roger Dingledine
 Created: 2015-07-13
 Status: Draft
 
 1. Overview
 
-   Direct onion services are a modified form of onion services, which trade
+   Single onion services are a modified form of onion services, which trade
    service-side location privacy for improved performance, reliability, and
    scalability.
 
-   Direct onion services have a .onion address identical to any other onion
-   service. After fetching the descriptor, a client can reach the service by
-   extending a circuit to the relay specified in the descriptor and opening
-   a stream for that onion address. The introduction point and rendezvous
-   protocols are bypassed for these services.
+   Single onion services have a .onion address identical to any other onion
+   service. The descriptor contains information sufficient to do a relay
+   extend of a circuit to the onion service and to open a stream for the onion
+   address. The introduction point and rendezvous protocols are bypassed for
+   these services.
 
-   We also specify behavior for a tor instance to publish a direct onion
+   We also specify behavior for a tor instance to publish a single onion
    service, which requires a reachable OR port, without necessarily acting
    as a public relay in the network.
 
 2. Motivation
 
-   Direct onion services have a few benefits over other onion services:
+   Single onion services have a few benefits over double onion services:
 
       * Connection latency is much lower by skipping rendezvous
       * Stream latency is reduced on a 4-hop circuit
       * Removing rendezvous circuits improves service scalability
-      * A direct onion service can use multiple relays for load balancing
+      * A single onion service can use multiple relays for load balancing
 
-   Direct onion services are not location hidden on the service side, but
+   Single onion services are not location hidden on the service side, but
    clients retain all of the benefits and privacy of onion services.
 
    We believe these improvements, along with the other benefits of onion
@@ -41,18 +41,18 @@ Status: Draft
 
    The onion descriptor format is extended to add:
 
-     "direct-service-relays" NL encrypted-string
+     "service-extend-locations" NL encrypted-string
        [At most once]
 
        A list of relay extend info, which is used instead of introduction
-       points and rendezvous for direct onion services. This field is
+       points and rendezvous for single onion services. This field is
        encoded and optionally encrypted in the same way as the
        "introduction-points" field.
 
        The encoded contents of this field contains no more than 10 entries,
        each containing the following data:
 
-         "direct-service-relay" SP link-specifiers NL
+         "service-extend-location" SP link-specifiers NL
             [At start, exactly once]
             link-specifiers is a base64 encoded link specifier block, in
             the format described by proposal 224 [BUILDING-BLOCKS] and the
@@ -61,7 +61,7 @@ Status: Draft
           "onion-key" SP key-type NL onion-key
             [Exactly once]
             Describes the onion key that must be used when extending to the
-            direct onion service relay.
+            single onion service relay.
 
             The key-type field is one of:
                "tap"
@@ -73,46 +73,48 @@ Status: Draft
    See also section 7.1. -special]
 
    A descriptor may contain either or both of "introduction-points" and
-   "direct-service-relays".
+   "service-extend-locations"; see section 5.2.
 
    [XXX: What kind of backwards compatibility issues exist here? Will existing
    relays accept one of those descriptors? -special]
 
-4. Reaching a direct onion service as a client
+4. Reaching a single onion service as a client
 
-   Direct onion services use standard onion hostnames, so the client will
+   Single onion services use normal onion hostnames, so the client will
    first request the service's descriptor. If the descriptor contains a
-   "direct-service-relays" field, the client should ignore the introduction
+   "service-extend-locations" field, the client should ignore the introduction
    points and rendezvous process in favor of the process defined here.
 
-   The descriptor's "direct-service-relay" information is sufficient for a
-   client to extend a circuit to the relay, regardless of whether this relay
-   is listed in the network consensus. This relay info must not be used for
-   any other purpose. If multiple direct service relays are specified, the
-   client should randomly select one.
+   The descriptor's "service-extend-locations" information is sufficient for a
+   client to extend a circuit to the onion service, regardless of whether it is
+   also listed as a relay in the network consensus. This extend info must not
+   be used for any other purpose. If multiple extend locations are specified,
+   the client should randomly select one.
 
-   The client uses a 3-hop circuit to extend to the service relay from the
+   The client uses a 3-hop circuit to extend to the service location from the
    descriptor. Once this circuit is built, the client sends a BEGIN cell to
    the relay, with the onion address as hostname and the desired TCP port.
 
    If the circuit or stream fails, the client should retry using another
-   direct service relay from the descriptor.
+   extend location from the descriptor. If all extend locations fail, and the
+   descriptor contains an "introduction-points" field, the client may fall back
+   to a full rendezvous operation.
 
-5. Publishing a direct onion service
+5. Publishing a single onion service
 
-   To act as a direct onion service, a tor instance (or cooperating group)
-   must:
+   To act as a single onion service, a tor instance (or cooperating group of
+   tor instances) must:
 
       * Have a publicly accessible OR port
-      * Publish onion descriptors in the same manner as a onion service
-      * Include a "direct-onion-relays" section in the onion descriptor
-      * Accept RELAY_BEGIN cells as defined in section 5.3
+      * Publish onion descriptors in the same manner as any onion service
+      * Include a "service-extend-locations" section in the onion descriptor
+      * Accept RELAY_BEGIN cells for the service as defined in section 5.3
 
 5.1. Configuration options
 
-   The tor server operating a direct onion service must accept connections as
+   The tor server operating a single onion service must accept connections as
    a tor relay, but is not required to be published in the consensus or to
-   allow extending circuits. To allow this, we propose the following
+   allow extending circuits. To enable this, we propose the following
    configuration option:
 
       RelayAllowExtend 0|1
@@ -121,43 +123,43 @@ Status: Draft
          if this option is disabled. If ExitRelay is also disabled, this relay
          will not pass through any traffic.
 
-   We also propose the following configuration options to control direct
+   We also propose the following configuration options to control single
    onion services:
 
-      [XXX: Define the config options for direct onions -special]
+      [XXX: Define the config options for single onions -special]
 
 5.2. Publishing descriptors
 
-   A direct onion service must publish descriptors in the same manner as an
-   onion service, as defined by rend-spec.
+   A single onion service must publish descriptors in the same manner as any
+   onion service, as defined by rend-spec and section 3 of this proposal.
 
    Optionally, a set of introduction points may be included in the descriptor
-   to provide backwards compatibility with clients that don't support direct
-   onion services.
+   to provide backwards compatibility with clients that don't support single
+   onion services, or to provide a fallback when the extend locations fail.
 
 5.3. RELAY_BEGIN
 
-   When a RELAY_BEGIN cell is received with a configured direct onion hostname
-   as a destination, the stream should be connected to the configured backend
+   When a RELAY_BEGIN cell is received with a configured single onion hostname
+   as the destination, the stream should be connected to the configured backend
    server in the same manner as a service-side rendezvous stream.
 
    All relays must reject any RELAY_BEGIN cell with an address ending in
-   ".onion" that does not match a locally configured direct onion service.
+   ".onion" that does not match a locally configured single onion service.
 
 6. Other considerations
 
 6.1. Load balancing
 
    High capacity services can distribute load by including multiple entries
-   in the direct-service-relays section of the descriptor, or by publishing
-   several descriptors to different hidden service directories, or by a
-   combination of these methods.
+   in the "service-extend-locations" section of the descriptor, or by
+   publishing several descriptors to different onion service directories, or
+   by a combination of these methods.
 
 6.2. Benefits of also running a Tor relay
 
-   If a direct onion service also acts as a published tor relay, it will keep
+   If a single onion service also acts as a published tor relay, it will keep
    connections to many other tor relays. This can significantly reduce the
-   latency of connections to the direct onion service, and also helps the tor
+   latency of connections to the single onion service, and also helps the tor
    network.
 
 6.3. Proposal 224 ("Next-Generation Hidden Services")
@@ -165,19 +167,19 @@ Status: Draft
    This proposal is compatible with proposal 224, with small changes to the
    service descriptor format. In particular:
 
-   The "direct-service-relay" sections are included in the encrypted portion
+   The "service-extend-location" sections are included in the encrypted portion
    of the descriptor, adjacent to any "introduction-point" sections. The
-   "direct-service-relays" field is no longer present. An onion service is also
-   direct onion service if any "direct-service-relay" field is present.
+   "service-extend-locations" field is no longer present. An onion service is
+   also single onion service if any "service-extend-location" field is present.
 
 6.4. Proposal 246 ("Merging Hidden Service Directories and Intro Points")
 
-   This proposal is compatible with proposal 246. The direct onion service
-   will publish its descriptor to the introduction points in the same manner
-   as any other onion service. The client may choose to build a circuit to the
+   This proposal is compatible with proposal 246. The onion service will
+   publish its descriptor to the introduction points in the same manner as any
+   other onion service. The client may choose to build a circuit to the
    specified relays, or to continue with the rendezvous protocol.
 
-   The client should not extend from the introduction point to the direct onion
+   The client should not extend from the introduction point to the single onion
    service's relay, to avoid overloading the introduction point. The client
    may truncate the circuit and extend through a new relay.
 
@@ -185,30 +187,30 @@ Status: Draft
 
 7.1. Authorization
 
-   Client authorization for a direct onion service is possible through
-   encryption of the direct-service-relays section in the descriptor, or
+   Client authorization for a single onion service is possible through
+   encryption of the service-extend-locations section in the descriptor, or
    "stealth" publication under a new onion address, as with traditional
    onion services.
 
    One problem with this is that if you suspect a relay is also serving a
-   direct onion service, you can connect to it and send RELAY_BEGIN without
+   single onion service, you can connect to it and send RELAY_BEGIN without
    any further authorization. To prevent this, we would need to include a
    cookie from the descriptor in the RELAY_BEGIN information.
 
 7.2. Preventing relays from being unintentionally published
 
-   Many direct onion relays will not want to relay other traffic, and will
+   Many single onion servers will not want to relay other traffic, and will
    set 'PublishServerDescriptor 0' to prevent it. Even when they do, they will
    still generate a relay descriptor, which could be downloaded and published
-   to a directory authority without the relay's consent. To preven this, we
+   to a directory authority without the relay's consent. To prevent this, we
    should insert a field in the relay descriptor when PublishServerDescriptor
    is disabled that instructs relays to never include it as part of a
    consensus.
 
    [XXX: Also see task #16564]
 
-7.3. Ephemeral direct onion services (ADD_ONION)
+7.3. Ephemeral single onion services (ADD_ONION)
 
    The ADD_ONION control port command could be extended to support ephemerally
-   configured direct onion services. We encourage this, but specifying its
+   configured single onion services. We encourage this, but specifying its
    behavior is out of the scope of this proposal.
