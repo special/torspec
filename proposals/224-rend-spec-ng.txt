@@ -909,14 +909,15 @@ Table of contents:
        The version-number contains a positive integer indicating the version
        of the descriptor. Current version is "3".
 
-    "descriptor-signing-key-cert" SP certificate NL
+    "descriptor-signing-key-cert" NL certificate NL
 
        [Exactly once.]
 
        The 'certificate' field contains a certificate in the format from
-       proposal 220, with the short-term ed25519 descriptor-signing key
-       signed by the blinded public key.  It must contain a
-       ed25519-signing-key extension containing the blinded public key.
+       proposal 220, wrapped with "-----BEGIN ED25519 CERT-----".  The
+       certificate cross-certifies the short-term descriptor signing key with
+       the blinded public key.  The certificate type must be [08], and the
+       blinded public key must be present as the signing-key extension.
 
      "revision-counter" SP Integer NL
 
@@ -944,7 +945,7 @@ Table of contents:
        [exactly once, at end.]
 
        A signature of all previous fields, using the signing key in the
-       hs-descriptor line. We use a separate key for signing, so that
+       descriptor-signing-key-cert line. We use a separate key for signing, so that
        the hidden service host does not need to have its private blinded
        key online.
 
@@ -1011,11 +1012,11 @@ Table of contents:
 
           [Exactly once per introduction point]
 
-          Base64 encoded introduction point authentication key that was
-          used to establish the introduction point circuit, cross-certifying
-          the descriptor signing key.  This uses the certificate format of
-          proposal 220 with type [09].  The signing-key extension is
-          mandatory here to tell you what the public key is.
+          The certificate is a proposal 220 certificate wrapped in
+          "-----BEGIN ED25519 CERT-----", cross-certifying the descriptor
+          signing key with the introduction point authentication key, which
+          is included in the mandatory signing-key extension.  The certificate
+          type must be [09].
 
         "enc-key" SP "ntor" SP enc-public-key NL
 
@@ -1046,7 +1047,7 @@ Table of contents:
           The certificate type must be [10], and the signing-key extension is
           mandatory.
 
-          For "legacy" keys, certificate is a RSA signature wrapped in
+          For "legacy" keys, certificate is an RSA signature wrapped in
           "-----BEGIN SIGNATURE-----" of the digest:
               H("legacy introduction point encryption key" | ED25519_KEY)
           ED25519_KEY is the 32 byte descriptor signing public key.
@@ -1807,10 +1808,12 @@ Appendix E. Reserved numbers
 
   We reserve these certificate type values for Ed25519 certificates:
 
-      [08] hidden service short-term ed25519 key, signed with blinded
+      [08] short-term descriptor signing key, signed with blinded
            public key. (Section 2.4)
-      [09] intro point authentication key, cross-certifying blinded
-           public key. (Section 2.5)
+      [09] intro point authentication key, cross-certifying the descriptor
+           signing key. (Section 2.5)
+      [10] ed25519 key derived from the curve25519 intro point encryption key,
+           cross-certifying the descriptor signing key. (Section 2.5)
 
   [XXXX list more]
 
